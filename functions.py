@@ -36,11 +36,11 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
   
     Returns:
     --------
-    out : tuple of Model and KeyedList or tuple of Model and two lists
+    out : tuple of Model and KeyedList and, optionally, two lists
         If `return_ens` is false (the default case), return the SloppyCell 
         model and the optimal parameter set.
 
-        Otherwise return the model, the parameter ensemble and the corresponding
+        Otherwise return also the parameter ensemble and the corresponding
         costs.
   
     """
