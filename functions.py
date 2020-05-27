@@ -64,7 +64,8 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
     if return_ens:
         if not global_fit:
             ens = [params_opt]
-        return m, ens
+            gs = [0]
+        return m, ens, gs
     else:
         return m, params_opt
 
