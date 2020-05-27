@@ -4,6 +4,43 @@ from SloppyCell.ReactionNetworks import *
 
 
 def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_fit = True, exp_ids=None, local_it=20, global_it=10000, return_ens=True):
+    """ 
+    Fit a set of experiments in a SloppyCell model.
+  
+    This function generates a SloppyCell model from a set of experiments and nets and performs local and global optimization 
+    given sets of fixed, constrained, and free parameters.
+  
+    Parameters:
+    -----------
+    exps : list
+        A list of SloppyCell experiment objects.
+    nets : list
+        A list of SloppyCell network objects
+    params_fixed : KeyedList
+        A keyed list of fixed parameters
+    params_constrained : KeyedList
+        A keyed list of constrained parameters
+    params_free : KeyedList
+        A keyed list of free parameters
+    global_fit : bool, optional
+        When true, perform ensemble analysis.
+    exp_ids : list, optional
+        A list of ids to restrict the fit to a subset of experiments.
+    local_it : int, optional
+        Number of iterations for the local fit.
+    global_it : int
+        Number of iterations for the ensemble analysis.
+    return_ens : bool
+        When true, return the parameter ensemble.
+  
+    Returns:
+    --------
+    out : tuple of Model and KeyedList or tuple of Model and two lists
+        If `return_ens` is false (the default case), return the SloppyCell model and the optimal parameter set.
+
+        Otherwise return the model, the parameter ensemble and the corresponding costs.
+  
+    """
     if exp_ids is None:
         exp_ids = exps.keys()
 
