@@ -141,6 +141,7 @@ def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, file=None
         for var in plot_vars:
             sf_i = sf[exp_id][var]
             for net_key, net in nets[exp_id].items():
+                net = net.copy()
                 net_id = net.get_id()
                 net.set_var_ics(params)
                 net.set_var_vals(params)  
@@ -173,32 +174,31 @@ def get_tlims_from_data(data):
     return [tmin, tmax]
 
 
-def plot_pars(ens_list, pars, net, pars_bg = None, labels = None, ax=None, legend=True, file=None, tex=False):
+def plot_pars(ens_list, pars, net, pars_bg = None, labels = None, ax=None, legend=True, file=None):
     '''
     Plot parameters for a given list of parameter ensembles.
 
     '''
     if ax==None:
         fig,ax = plt.subplots(1,1, figsize=(3+0.8*len(pars),4))
+        plot = True
     
     if labels==None:
         labels = ['ens_'+str(i) for i in range(len(ens_list))]
 
-    if tex:
-        df = pd.DataFrame(columns = labels, index=pars)
+    if len(pars_bg) == 1 and type(pars_bg) == list:
+        pars_bg = pars_bg*len(ens_list)
 
     x_pos = np.linspace(-0.3,0.3,len(ens_list))
 
     for k, e in zip(range(len(ens_list)), ens_list):
         par_array = np.empty((len(e), len(pars)))
         for i, pars_i in zip(range(len(e)), e):
-            net.set_var_vals(pars_bg)
+            net.set_var_vals(pars_bg[k])
             net.set_var_vals(pars_i)
             par_array[i,] = np.log10([net.get_var_val(par) for par in pars])
         for j, par in zip(range(len(pars)), pars):
             par_mean = np.mean(par_array[:,j])
-            if tex:
-                df.loc[par, labels[k]] = '{:.2g} '.format(10**par_mean)
             par_std = np.std(par_array[:,j])
             if j==0:
                 p = ax.errorbar(j+x_pos[k], par_mean, yerr=par_std, fmt='.', ms=10, lw=2, capsize=3, label=labels[k])
@@ -222,10 +222,9 @@ def plot_pars(ens_list, pars, net, pars_bg = None, labels = None, ax=None, legen
     
     if legend:
         ax.legend(bbox_to_anchor=(1,1))
-    #plt.tight_layout()
+
 
     if file is not None:
-        if ax is None:
+        if plot:
+            plt.tight_layout()
             plt.savefig(file+'.pdf')
-        if tex:
-            df.to_latex(file+'.tex')
