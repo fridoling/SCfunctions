@@ -75,7 +75,7 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
         m.AddResidual(res)
 
     print "Performing local optimization ..."
-    params_opt = Optimization.fmin_lm_log_params(m, params=m.params, maxiter=100, disp=False)
+    params_opt = Optimization.fmin_lm_log_params(m, params=m.params, maxiter=local_it, disp=False)
     print " done.\n"
 
 
