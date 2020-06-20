@@ -135,7 +135,7 @@ def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, file=None
             ax = axes
         data = exp.get_data()
         t_lims = get_tlims_from_data(data) 
-        plot_vars = [data[key].keys()[0] for key in data.keys()]
+        plot_vars = [var for var in data[key].keys() for key in data.keys()]
         plot_vars = list(np.unique(plot_vars))        
         
         for var in plot_vars:
