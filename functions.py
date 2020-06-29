@@ -125,38 +125,56 @@ def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, file=None
     if exp_ids is None:
         exp_ids = exps.keys()
 
-    fig, axes = plt.subplots(1, len(exp_ids), figsize=(len(exp_ids)*5,5))
+    ydim = 1
+    for exp_id in exp_ids:
+        data = exps[exp_id].get_data()
+        plot_vars = [var for key in data.keys() for var in data[key].keys()]
+        plot_vars = list(np.unique(plot_vars))
+        ydim = np.max((ydim, len(plot_vars)))
 
-    for i, exp_id in zip(range(len(exp_ids)), exp_ids):
+    fig, axes = plt.subplots(ydim, len(exp_ids), figsize=(len(exp_ids)*5,ydim*4))
+
+    for j, exp_id in zip(range(len(exp_ids)), exp_ids):
         exp = exps[exp_id]
-        if len(exp_ids)>1:
-            ax = axes[i]
-        else:
-            ax = axes
         data = exp.get_data()
         t_lims = get_tlims_from_data(data) 
-        plot_vars = [var for var in data[key].keys() for key in data.keys()]
+	plot_vars = [var for key in data.keys() for var in data[key].keys()]
         plot_vars = list(np.unique(plot_vars))        
+
         
-        for var in plot_vars:
+        for i, var in zip(range(len(plot_vars)), plot_vars):
+            if len(exp_ids)>1 and ydim>1:
+                ax = axes[i,j]
+            elif len(exp_ids)>1 and ydim==1:
+                ax = axes[j]
+            elif len(exp_ids)==1 and ydim>1:
+                ax = axes[i]
+            else:
+                ax = axes
+
             sf_i = sf[exp_id][var]
             for net_key, net in nets[exp_id].items():
                 net = net.copy()
                 net_id = net.get_id()
                 net.set_var_ics(params)
                 net.set_var_vals(params)  
-                traj = net.integrate([0, t_lims[1]*2])
+                times = np.concatenate((np.linspace(0, t_lims[0], 101), 
+                    np.linspace(t_lims[0], t_lims[1], 101),
+                    np.linspace(t_lims[1], 2*t_lims[1], 101)
+                    ))
+                traj = net.integrate(times)
                 p = ax.plot(traj.timepoints-t_lims[0], traj.get_var_traj(var), label=net.get_name())
                 [ax.scatter(t-t_lims[0], d[0]/sf_i, color=p[0].get_color()) for (t,d) in data[net_id][var].items()];
-        if xlim is None:
-            xlim = np.array([-0.1,1.1])*np.ptp(t_lims)
-        if ylim is not None:
-            ax.set_ylim(ylim)
-        ax.set_xlim(xlim)
-        ax.set_xlabel('time')
-        ax.set_ylabel('concentration')
-        ax.legend()
-        ax.set_title(exp_id, fontweight='bold')
+            if xlim is None:
+                xlim = np.array([-0.1,1.1])*np.ptp(t_lims)
+            if ylim is not None:
+                ax.set_ylim(ylim)
+            ax.set_xlim(xlim)
+            ax.set_xlabel('time')
+            ax.set_ylabel(var)
+            ax.legend()
+            if i==0:
+                ax.set_title(exp_id, fontweight='bold')
     plt.tight_layout()
     if file is not None:
         plt.savefig(file)
@@ -168,7 +186,7 @@ def get_tlims_from_data(data):
     for k1 in data.keys():
         d1 = data[k1]
         for k2 in d1.keys():
-            t_data.append(d1[k2].keys())
+            t_data = t_data + d1[k2].keys()
     tmin = np.min(t_data)
     tmax = np.max(t_data)
     return [tmin, tmax]
@@ -211,7 +229,7 @@ def plot_pars(ens_list, pars, net, pars_bg = None, labels = None, ax=None, legen
             ax.axvspan(j-0.5, j+0.5, alpha=0.05, color='k')
 
     ax.set_xticks(range(len(pars)));
-    ax.set_xticklabels(pars);
+    ax.set_xticklabels(pars, rotation=90);
     ax.set_xlim([-0.5,len(pars)-0.5])
     yticks = ax.get_yticks()
     yticks = yticks[yticks % 1 == 0]
