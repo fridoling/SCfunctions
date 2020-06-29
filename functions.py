@@ -114,7 +114,7 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
 def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, file=None):
 
     if params is not None:
-        m.params = params
+        m.params.update(params)
     else:
         params = m.params
 
