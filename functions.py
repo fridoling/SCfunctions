@@ -49,7 +49,7 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
         exp_ids = exps.keys()
 
     exp_set = [exps[exp_id] for exp_id in exp_ids]
-    net_set = [item for sublist in [nets[key].values() for key in exps.keys()] for item in sublist]
+    net_set = [item for sublist in [nets[key].values() for key in exps_ids] for item in sublist]
 
     keys_opt = list(set(params_constrained.keys()).union(set(params_free.keys())))
     
