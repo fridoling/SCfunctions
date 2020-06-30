@@ -100,7 +100,8 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
         params_opt = ens[np.argmin(gs)]
         print " done.\n"
 
-    m.params = params_opt
+    m.params.update(params_opt)
+    m.CalculateForAllDataPoints(params_opt);
 
     if return_ens:
         if not global_fit:
@@ -111,10 +112,11 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
         return m, params_opt
 
 
-def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, file=None):
+def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, t_iv = None, file=None):
 
     if params is not None:
         m.params.update(params)
+        m.CalculateForAllDataPoints(params)
     else:
         params = m.params
 
@@ -137,7 +139,9 @@ def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, file=None
     for j, exp_id in zip(range(len(exp_ids)), exp_ids):
         exp = exps[exp_id]
         data = exp.get_data()
-        t_lims = get_tlims_from_data(data) 
+        t_lims = get_tlims_from_data(data)
+        if t_iv is None:
+            t_iv = t_lims[0]
 	plot_vars = [var for key in data.keys() for var in data[key].keys()]
         plot_vars = list(np.unique(plot_vars))        
 
@@ -158,13 +162,13 @@ def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, file=None
                 net_id = net.get_id()
                 net.set_var_ics(params)
                 net.set_var_vals(params)  
-                times = np.concatenate((np.linspace(0, t_lims[0], 101), 
-                    np.linspace(t_lims[0], t_lims[1], 101),
+                times = np.concatenate((np.linspace(0, t_iv, 101), 
+                    np.linspace(t_iv, t_lims[1], 101),
                     np.linspace(t_lims[1], 2*t_lims[1], 101)
                     ))
                 traj = net.integrate(times)
-                p = ax.plot(traj.timepoints-t_lims[0], traj.get_var_traj(var), label=net.get_name())
-                [ax.scatter(t-t_lims[0], d[0]/sf_i, color=p[0].get_color()) for (t,d) in data[net_id][var].items()];
+                p = ax.plot(traj.timepoints-t_iv, traj.get_var_traj(var), label=net.get_name())
+                [ax.scatter(t-t_iv, d[0]/sf_i, color=p[0].get_color()) for (t,d) in data[net_id][var].items()];
             if xlim is None:
                 xlim = np.array([-0.1,1.1])*np.ptp(t_lims)
             if ylim is not None:
