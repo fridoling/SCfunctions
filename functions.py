@@ -112,7 +112,7 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
         return m, params_opt
 
 
-def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, t_iv = None, file=None):
+def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, t_iv = None, plot_vars=None, file=None):
 
     if params is not None:
         m.params.update(params)
@@ -128,13 +128,17 @@ def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, t_iv = No
         exp_ids = exps.keys()
 
     ydim = 1
+
+    exp_vars = {}
     for exp_id in exp_ids:
         data = exps[exp_id].get_data()
-        plot_vars = [var for key in data.keys() for var in data[key].keys()]
-        plot_vars = list(np.unique(plot_vars))
-        ydim = np.max((ydim, len(plot_vars)))
+        exp_vars_id = [var for key in data.keys() for var in data[key].keys()]
+        if plot_vars is not None:
+            exp_vars_id = np.intersect1d(plot_vars, exp_vars_id)
+        exp_vars[exp_id] = list(np.unique(exp_vars_id))
+        ydim = np.max((ydim, len(exp_vars[exp_id])))
 
-    fig, axes = plt.subplots(ydim, len(exp_ids), figsize=(len(exp_ids)*5,ydim*4))
+    fig, axes = plt.subplots(ydim, len(exp_ids), figsize=(len(exp_ids)*5,ydim*4), sharey='row')
 
     for j, exp_id in zip(range(len(exp_ids)), exp_ids):
         exp = exps[exp_id]
@@ -142,11 +146,9 @@ def plot_fit(m, nets, params=None, exp_ids=None, xlim=None, ylim=None, t_iv = No
         t_lims = get_tlims_from_data(data)
         if t_iv is None:
             t_iv = t_lims[0]
-	plot_vars = [var for key in data.keys() for var in data[key].keys()]
-        plot_vars = list(np.unique(plot_vars))        
 
         
-        for i, var in zip(range(len(plot_vars)), plot_vars):
+        for i, var in zip(range(len(exp_vars[exp_id])), exp_vars[exp_id]):
             if len(exp_ids)>1 and ydim>1:
                 ax = axes[i,j]
             elif len(exp_ids)>1 and ydim==1:
