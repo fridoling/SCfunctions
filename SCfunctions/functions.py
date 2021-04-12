@@ -8,7 +8,7 @@ from libsbml import *
 
 
 ### Functions that allow the modification of SBML models
-def add_reaction(model, reactants, products, pars, formula, rx_id):
+def add_reaction(model, reactants, products, pars, formula, rx_id, reversible = False):
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
     rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
@@ -16,6 +16,7 @@ def add_reaction(model, reactants, products, pars, formula, rx_id):
         raise ValueError("reaction "+rx_id+" already exists in model.")        
     reaction = model.createReaction()
     reaction.setFast(False)
+    reaction.setReversible(reversible)
     for par in pars:
         if par not in parameter_ids:
             add_parameter(model, par)
@@ -45,6 +46,7 @@ def add_binding_reaction(model, reactants, products, kon, koff, rx_id):
         raise ValueError("reaction "+rx_id+" already exists in model.")        
     reaction = model.createReaction()
     reaction.setFast(False)
+    reaction.setReversible(True)
     for par in [kon, koff]:
         if par not in parameter_ids:
             add_parameter(model, par)
@@ -75,6 +77,7 @@ def add_catalytic_reaction(model, reactants, products, kcat, rx_id):
         raise ValueError("reaction "+rx_id+" already exists in model.")        
     reaction = model.createReaction()
     reaction.setFast(False)
+    reaction.setReversible(True)
     if kcat not in parameter_ids:
         add_parameter(model, kcat)
     for reactant in reactants:
@@ -96,12 +99,13 @@ def add_catalytic_reaction(model, reactants, products, kcat, rx_id):
     kinetic_law.setMath(math_ast)
 
 
-def add_species(model, species_id, amount = 0.0):
+def add_species(model, species_id, amount = 0.0, compartment = "unnamed", hasOnlySubstanceUnits = False, boundaryCondition = False, constant = False):
     species = model.createSpecies()
     species.setId(species_id)
-    species.setCompartment('unnamed')
-    species.setConstant(False)
+    species.setCompartment(compartment)
+    species.setConstant(constant)
     species.setInitialAmount(amount)
+    species.setHasOnlySubstanceUnits(hasOnlySubstanceUnits)
 
 
 def add_parameter(model, parameter_id, value = 0.0, constant = False):
