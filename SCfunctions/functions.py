@@ -45,12 +45,12 @@ def add_reaction(model, reactants, products, rx_type, pars):
     kinetic_law = reaction.createKineticLaw()
     kinetic_law.setMath(math_ast)
     
-def add_species(model, species_id):
+def add_species(model, species_id, amount = 0.0):
     species = model.createSpecies()
     species.setId(species_id)
     species.setCompartment('unnamed')
     species.setConstant(False)
-    species.setInitialAmount(0.0)
+    species.setInitialAmount(amount)
     
 def add_to_cons(model, free_var, new_var):
     rule = model.getAssignmentRuleByVariable(free_var)
