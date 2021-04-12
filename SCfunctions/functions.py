@@ -8,7 +8,7 @@ from libsbml import *
 
 
 ### Functions that allow the modification of SBML models
-def add_reaction(model, reactants, products, pars, formula, rx_id, reversible = False):
+def add_reaction(model, reactants, products, modifiers, pars, formula, rx_id, reversible = False):
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
     rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
@@ -25,13 +25,16 @@ def add_reaction(model, reactants, products, pars, formula, rx_id, reversible = 
             add_species(model, reactant)
         species = reaction.createReactant()
         species.setSpecies(reactant)
-        species.setConstant(True)
     for product in products:
         if product not in species_ids:
             add_species(model, product)        
         species = reaction.createProduct()
         species.setSpecies(product)
-        species.setConstant(True)
+    for modifier in modifiers:
+        if modifier not in species_ids:
+            add_species(model, modifier)
+        species = reaction.createModifier()
+        species.setSpecies(modifier)
     reaction.setId(rx_id)
     math_ast = parseL3Formula(formula)
     kinetic_law = reaction.createKineticLaw()
@@ -99,17 +102,19 @@ def add_catalytic_reaction(model, reactants, products, kcat, rx_id):
     kinetic_law.setMath(math_ast)
 
 
-def add_species(model, species_id, concentration = 0.0, compartment = "unnamed", hasOnlySubstanceUnits = False, boundaryCondition = False, constant = False):
+def add_species(model, species_id, concentration = 0.0, compartment = None, hasOnlySubstanceUnits = False, boundaryCondition = False, constant = True):
     species = model.createSpecies()
     species.setId(species_id)
+    if compartment is None:
+        compartment = model.getCompartment(0).getId()
     species.setCompartment(compartment)
     species.setConstant(constant)
     species.setInitialConcentration(concentration)
     species.setHasOnlySubstanceUnits(hasOnlySubstanceUnits)
     species.setBoundaryCondition(boundaryCondition)
 
-
-def add_parameter(model, parameter_id, value = 0.0, constant = False):
+    
+def add_parameter(model, parameter_id, value = 0.0, constant = True):
     parameter = model.createParameter()
     parameter.setId(parameter_id)
     parameter.setConstant(constant)
