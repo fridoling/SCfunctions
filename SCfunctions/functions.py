@@ -25,11 +25,13 @@ def add_reaction(model, reactants, products, modifiers, pars, formula, rx_id, re
             add_species(model, reactant)
         species = reaction.createReactant()
         species.setSpecies(reactant)
+        species.setConstant(True)
     for product in products:
         if product not in species_ids:
             add_species(model, product)        
         species = reaction.createProduct()
         species.setSpecies(product)
+        species.setConstant(True)
     for modifier in modifiers:
         if modifier not in species_ids:
             add_species(model, modifier)
