@@ -104,7 +104,7 @@ def add_catalytic_reaction(model, reactants, products, kcat, rx_id):
     kinetic_law.setMath(math_ast)
 
 
-def add_species(model, species_id, concentration = 0.0, compartment = None, hasOnlySubstanceUnits = False, boundaryCondition = False, constant = True):
+def add_species(model, species_id, concentration = 0.0, compartment = None, hasOnlySubstanceUnits = False, boundaryCondition = False, constant = False):
     species = model.createSpecies()
     species.setId(species_id)
     if compartment is None:
