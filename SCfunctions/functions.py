@@ -63,12 +63,14 @@ def add_binding_reaction(model, reactants, products, kon, koff, rx_id):
         species = reaction.createReactant()
         species.setSpecies(reactant)
         species.setConstant(True)
+        species.setStoichiometry(1)
     for product in products:
         if product not in species_ids:
             add_species(model, product)        
         species = reaction.createProduct()
         species.setSpecies(product)
         species.setConstant(True)
+        species.setStoichiometry(1)
     reaction.setId(rx_id)
     formula = " * ".join([kon]+reactants)+" - "+" * ".join([koff]+products)
     math_ast = parseL3Formula(formula)
@@ -93,12 +95,14 @@ def add_catalytic_reaction(model, reactants, products, kcat, rx_id):
         species = reaction.createReactant()
         species.setSpecies(reactant)
         species.setConstant(True)
+        species.setStoichiometry(1)
     for product in products:
         if product not in species_ids:
             add_species(model, product)        
         species = reaction.createProduct()
         species.setSpecies(product)
         species.setConstant(True)
+        species.setStoichiometry(1)
     reaction.setId(rx_id)
     formula = " * ".join([kcat] + reactants)
     math_ast = parseL3Formula(formula)
