@@ -106,6 +106,7 @@ def add_species(model, species_id, amount = 0.0, compartment = "unnamed", hasOnl
     species.setConstant(constant)
     species.setInitialAmount(amount)
     species.setHasOnlySubstanceUnits(hasOnlySubstanceUnits)
+    species.setBoundaryCondition(boundaryCondition)
 
 
 def add_parameter(model, parameter_id, value = 0.0, constant = False):
