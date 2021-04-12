@@ -6,7 +6,7 @@ setup(
     author='Fridolin Gross',
     author_email='fridoling@hotmail.com',
     packages=['SCfunctions'],
-    scripts=['SCfunctions/SCfunctions.py'],
+    scripts=['SCfunctions/functions.py'],
     url='http://pypi.python.org/pypi/TowelStuff/',
     description='Custom functions for use with SloppyCell',
     long_description=open('README.md').read(),

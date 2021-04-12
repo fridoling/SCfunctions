@@ -1,1 +1,1 @@
-from .SCfunctions import SCfunctions
+from .SCfunctions import functions
