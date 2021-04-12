@@ -4,16 +4,21 @@ import pandas as pd
 from SloppyCell.ReactionNetworks import *
 from scipy.interpolate import interp1d
 import pdb
-import simplesbml
 from libsbml import *
 
 
 ### Functions that allow the modification of SBML models
-def add_reaction(model, reactants, products, rx_type, pars):
+def add_reaction(model, reactants, products, pars, formula, rx_id):
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
-    reaction_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
+    parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
+    rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
+    if rx_id in rx_ids:
+        raise ValueError("reaction "+rx_id+" already exists in model.")        
     reaction = model.createReaction()
     reaction.setFast(False)
+    for par in pars:
+        if par not in parameter_ids:
+            add_parameter(model, par)
     for reactant in reactants:
         if reactant not in species_ids:
             add_species(model, reactant)
@@ -26,31 +31,84 @@ def add_reaction(model, reactants, products, rx_type, pars):
         species = reaction.createProduct()
         species.setSpecies(product)
         species.setConstant(True)
-    if rx_type=="binding":
-        reaction_id = 'v'+'_'.join(reactants)
-        if any(key not in pars.keys() for key in ['kon', 'koff']):
-            raise ValueError("need both 'kon' and 'koff' parameters for binding reaction.")
-        formula = " * ".join([pars["kon"]]+reactants)+" - "+" * ".join([pars["koff"]]+products)
-    elif rx_type=="catalytic":
-        reaction_id = 'v'+'_'.join(products)+'_cat'
-        if 'kcat' not in pars.keys():
-            raise ValueError("need 'kcat' parameter for catalytic reaction.")        
-        formula = " * ".join([pars["kcat"]] + reactants)
-    else:
-        raise ValueError("Unknown reaction type.")
-    if reaction_id in reaction_ids:
-        raise ValueError("reaction "+reaction_id+" already exists in model.")        
-    reaction.setId(reaction_id)
+    reaction.setId(rx_id)
     math_ast = parseL3Formula(formula)
     kinetic_law = reaction.createKineticLaw()
     kinetic_law.setMath(math_ast)
     
+    
+def add_binding_reaction(model, reactants, products, kon, koff, rx_id):
+    species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
+    parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
+    rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
+    if rx_id in rx_ids:
+        raise ValueError("reaction "+rx_id+" already exists in model.")        
+    reaction = model.createReaction()
+    reaction.setFast(False)
+    for par in [kon, koff]:
+        if par not in parameter_ids:
+            add_parameter(model, par)
+    for reactant in [kon, koff]:
+        if reactant not in species_ids:
+            add_species(model, reactant)
+        species = reaction.createReactant()
+        species.setSpecies(reactant)
+        species.setConstant(True)
+    for product in products:
+        if product not in species_ids:
+            add_species(model, product)        
+        species = reaction.createProduct()
+        species.setSpecies(product)
+        species.setConstant(True)
+    reaction.setId(rx_id)
+    formula = " * ".join([kon]+reactants)+" - "+" * ".join([koff]+products)
+    math_ast = parseL3Formula(formula)
+    kinetic_law = reaction.createKineticLaw()
+    kinetic_law.setMath(math_ast)
+
+
+def add_catalytic_reaction(model, reactants, products, kcat, rx_id):
+    species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
+    parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
+    rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
+    if rx_id in rx_ids:
+        raise ValueError("reaction "+rx_id+" already exists in model.")        
+    reaction = model.createReaction()
+    reaction.setFast(False)
+    if kcat not in parameter_ids:
+        add_parameter(model, kcat)
+    for reactant in reactants:
+        if reactant not in species_ids:
+            add_species(model, reactant)
+        species = reaction.createReactant()
+        species.setSpecies(reactant)
+        species.setConstant(True)
+    for product in products:
+        if product not in species_ids:
+            add_species(model, product)        
+        species = reaction.createProduct()
+        species.setSpecies(product)
+        species.setConstant(True)
+    reaction.setId(rx_id)
+    formula = " * ".join([kcat] + reactants)
+    math_ast = parseL3Formula(formula)
+    kinetic_law = reaction.createKineticLaw()
+    kinetic_law.setMath(math_ast)
+
+
 def add_species(model, species_id, amount = 0.0):
     species = model.createSpecies()
     species.setId(species_id)
     species.setCompartment('unnamed')
     species.setConstant(False)
     species.setInitialAmount(amount)
+
+
+def add_parameter(model, parameter_id, value = 0.0, constant = False):
+    parameter = model.createParameter()
+    parameter.setId(parameter_id)
+    parameter.setConstant(constant)
+    parameter.setValue(value)
     
 def add_to_cons(model, free_var, new_var):
     rule = model.getAssignmentRuleByVariable(free_var)
