@@ -4,7 +4,74 @@ import pandas as pd
 from SloppyCell.ReactionNetworks import *
 from scipy.interpolate import interp1d
 import pdb
+import simplesbml
+from libsbml import *
 
+
+### Functions that allow the modification of SBML models
+def add_reaction(model, reactants, products, rx_type, pars):
+    species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
+    reaction_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
+    reaction = model.createReaction()
+    reaction.setFast(False)
+    for reactant in reactants:
+        if reactant not in species_ids:
+            add_species(model, reactant)
+        species = reaction.createReactant()
+        species.setSpecies(reactant)
+        species.setConstant(True)
+    for product in products:
+        if product not in species_ids:
+            add_species(model, product)        
+        species = reaction.createProduct()
+        species.setSpecies(product)
+        species.setConstant(True)
+    if rx_type=="binding":
+        reaction_id = 'v'+'_'.join(reactants)
+        if any(key not in pars.keys() for key in ['kon', 'koff']):
+            raise ValueError("need both 'kon' and 'koff' parameters for binding reaction.")
+        formula = " * ".join([pars["kon"]]+reactants)+" - "+" * ".join([pars["koff"]]+products)
+    elif rx_type=="catalytic":
+        reaction_id = 'v'+'_'.join(products)+'_cat'
+        if 'kcat' not in pars.keys():
+            raise ValueError("need 'kcat' parameter for catalytic reaction.")        
+        formula = " * ".join([pars["kcat"]] + reactants)
+    else:
+        raise ValueError("Unknown reaction type.")
+    if reaction_id in reaction_ids:
+        raise ValueError("reaction "+reaction_id+" already exists in model.")        
+    reaction.setId(reaction_id)
+    math_ast = parseL3Formula(formula)
+    kinetic_law = reaction.createKineticLaw()
+    kinetic_law.setMath(math_ast)
+    
+def add_species(model, species_id):
+    species = model.createSpecies()
+    species.setId(species_id)
+    species.setCompartment('unnamed')
+    species.setConstant(False)
+    species.setInitialAmount(0.0)
+    
+def add_to_cons(model, free_var, new_var):
+    rule = model.getAssignmentRuleByVariable(free_var)
+    formula = rule.getFormula()
+    if '(' not in formula:
+        formula.split(' ')
+        components = formula.split(' - ')
+        new_formula = components[0] + ' - ' + '(' + ' + '.join(components[1:] + [new_var]) + ')'
+    else:
+        formula = rule.getFormula()
+        new_formula = formula[:-1]+' + '+new_var+')'
+    rule.setFormula(new_formula)
+    
+def add_to_tot(model, tot_var, new_var):
+    rule = model.getAssignmentRuleByVariable(tot_var)
+    formula = rule.getFormula()    
+    new_formula = formula+' + '+new_var
+    rule.setFormula(new_formula)
+
+
+### Functions for Plotting
 def parSS(net, outExp='AC', par='ksyn', parLim=[0, 100], nPoints=10, logscale=False):
     """Create steady state values of an expression for given values of a parameter.
     
