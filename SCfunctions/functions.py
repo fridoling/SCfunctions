@@ -1,9 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from SloppyCell.ReactionNetworks import *
-from scipy.interpolate import interp1d
-import pdb
 from libsbml import *
 
 
