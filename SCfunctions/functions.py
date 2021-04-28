@@ -2,15 +2,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 from SloppyCell.ReactionNetworks import *
 from libsbml import *
+import warnings
 
 
 ### Functions that allow the modification of SBML models
-def add_reaction(model, reactants, products, modifiers, pars, formula, rx_id, reversible = False):
+def add_reaction(model, reactants, products, modifiers, pars, formula, rx_id, reversible = False, replace = False):
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
     rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
-    if rx_id in rx_ids:
-        raise ValueError("reaction "+rx_id+" already exists in model.")        
+    if rx_id in rx_ids and not replace:
+        raise ValueError("reaction '"+rx_id+"' already exists in model.")
+    else:
+        reaction_old = model.getReaction(rx_id)
+        reaction_old.removeFromParentAndDelete()
     reaction = model.createReaction()
     reaction.setFast(False)
     reaction.setReversible(reversible)
@@ -42,12 +46,15 @@ def add_reaction(model, reactants, products, modifiers, pars, formula, rx_id, re
     kinetic_law.setMath(math_ast)
     
     
-def add_binding_reaction(model, reactants, products, kon, koff, rx_id):
+def add_binding_reaction(model, reactants, products, kon, koff, rx_id, replace = False):
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
     rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
-    if rx_id in rx_ids:
-        raise ValueError("reaction "+rx_id+" already exists in model.")        
+    if rx_id in rx_ids and not replace:
+        raise ValueError("reaction '"+rx_id+"' already exists in model.")
+    else:
+        reaction_old = model.getReaction(rx_id)
+        reaction_old.removeFromParentAndDelete()
     reaction = model.createReaction()
     reaction.setFast(False)
     reaction.setReversible(True)
@@ -75,12 +82,15 @@ def add_binding_reaction(model, reactants, products, kon, koff, rx_id):
     kinetic_law.setMath(math_ast)
 
 
-def add_catalytic_reaction(model, reactants, products, kcat, rx_id):
+def add_catalytic_reaction(model, reactants, products, kcat, rx_id, replace = False):
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
     rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
-    if rx_id in rx_ids:
-        raise ValueError("reaction "+rx_id+" already exists in model.")        
+    if rx_id in rx_ids and not replace:
+        raise ValueError("reaction '"+rx_id+"' already exists in model.")
+    else:
+        reaction_old = model.getReaction(rx_id)
+        reaction_old.removeFromParentAndDelete()
     reaction = model.createReaction()
     reaction.setFast(False)
     reaction.setReversible(True)
