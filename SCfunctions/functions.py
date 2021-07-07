@@ -1,11 +1,53 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from SloppyCell.ReactionNetworks import *
 from libsbml import *
+from SloppyCell.ReactionNetworks import *
 import warnings
 
 
-### Functions that allow the modification of SBML models
+### Function to create an SBML model
+def create_model():
+    """Returns a simple but complete SBML Level 3 model for illustration."""
+    try:
+        document = SBMLDocument(3, 1)
+    except ValueError:
+        raise SystemExit('Could not create SBMLDocument object')
+
+    model = document.createModel()
+    model.setTimeUnits("second")
+    model.setExtentUnits("mole")
+    model.setSubstanceUnits('mole')
+
+    # Create a unit definition we will need later.  Note that SBML Unit
+    # objects must have all four attributes 'kind', 'exponent', 'scale'
+    # and 'multiplier' defined.
+
+    per_second = model.createUnitDefinition()
+    per_second.setId('per_second')
+    unit = per_second.createUnit()
+    unit.setKind(UNIT_KIND_SECOND)
+    unit.setExponent(-1)
+    unit.setScale(0)
+    unit.setMultiplier(1)
+
+    # Create a compartment inside this model, and set the required
+    # attributes for an SBML compartment in SBML Level 3.
+
+    c1 = model.createCompartment()
+    c1.setId('c1')
+    c1.setConstant(True)
+    c1.setSize(1)
+    c1.setSpatialDimensions(3)
+    c1.setUnits('litre')
+
+    # And we're done creating the basic model.
+    # Now return a text string containing the model in XML format.
+
+#     return writeSBMLToString(document)
+    return document
+
+
+## Functions that allow the modification of SBML models
 def add_assignment(model, var, species_list, pars, formula, replace = False, type = "species"):
     if model.getAssignmentRuleByVariable(var):
         if replace:
@@ -15,8 +57,9 @@ def add_assignment(model, var, species_list, pars, formula, replace = False, typ
             raise ValueError("Variable '"+var+"' already has assignment.")
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
-    if type == "species" and var not in species_list:
-        species_list += [var]
+    if type == "species":
+        if var not in species_list:
+            species_list += [var]
     elif type == "parameter" and var not in pars:
         pars += [var]
     else:
@@ -30,6 +73,9 @@ def add_assignment(model, var, species_list, pars, formula, replace = False, typ
     for species in species_list:
         if species not in species_ids:
             add_species(model, species)
+    if type == "species":
+        species = model.getSpecies(var)
+        species.setBoundaryCondition(True)
 
 
 def add_reaction(model, reactants, products, modifiers, pars, formula, rx_id, reversible = False, replace = False):
@@ -88,7 +134,7 @@ def add_binding_reaction(model, reactants, products, kon, koff, rx_id, replace =
     for par in [kon, koff]:
         if par not in parameter_ids:
             add_parameter(model, par)
-    for reactant in [kon, koff]:
+    for reactant in reactants:
         if reactant not in species_ids:
             add_species(model, reactant)
         species = reaction.createReactant()
@@ -155,7 +201,7 @@ def add_species(model, species_id, concentration = 0.0, compartment = None, hasO
     species.setBoundaryCondition(boundaryCondition)
 
     
-def add_parameter(model, parameter_id, value = 0.0, constant = True):
+def add_parameter(model, parameter_id, value = 1.0, constant = True):
     parameter = model.createParameter()
     parameter.setId(parameter_id)
     parameter.setConstant(constant)
