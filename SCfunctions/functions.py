@@ -154,7 +154,7 @@ def add_binding_reaction(model, reactants, products, kon, koff, rx_id, replace =
     kinetic_law.setFormula(formula)
 
 
-def add_catalytic_reaction(model, reactants, products, kcat, rx_id, replace = False):
+def add_catalytic_reaction(model, reactants, products, catalyst, kcat, rx_id, replace = False):
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
     rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
@@ -183,8 +183,12 @@ def add_catalytic_reaction(model, reactants, products, kcat, rx_id, replace = Fa
         species.setSpecies(product)
         species.setConstant(True)
         species.setStoichiometry(1)
+    if catalyst not in species_ids:
+        add_species(model, catalyst)
+    species = reaction.createModifier()
+    species.setSpecies(catalyst)
     reaction.setId(rx_id)
-    formula = " * ".join([kcat] + reactants)
+    formula = " * ".join([kcat] + reactants + [catalyst])
     kinetic_law = reaction.createKineticLaw()
     kinetic_law.setFormula(formula)
 
@@ -206,6 +210,35 @@ def add_parameter(model, parameter_id, value = 1.0, constant = True):
     parameter.setId(parameter_id)
     parameter.setConstant(constant)
     parameter.setValue(value)
+
+def add_conservation(model, free_var, tot_var, bound_vars):
+    species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
+    parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
+    if model.getAssignmentRule(free_var):
+        raise ValueError("assignment rule for "+free_var+" already exists in model.")
+    for bound_var in bound_vars:
+        if bound_var not in species_ids:
+            add_species(model, bound_var)
+    if free_var not in species_ids:
+        add_species(model, free_var)
+    if tot_var not in parameter_ids:
+        add_parameter(model, tot_var)
+    rule = model.createAssignmentRule()
+    rule.setVariable(free_var)
+    rule.setFormula("-".join([tot_var]+bound_vars))
+
+def add_combined_species(model, combined_var, compound_vars):
+    species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
+    if model.getAssignmentRule(combined_var):
+        raise ValueError("assignment rule for "+combined_var+" already exists in model.")
+    for compound_var in compound_vars:
+        if compound_var not in species_ids:
+            add_species(model, compound_var)
+    if combined_var not in species_ids:
+        add_species(model, combined_var)
+    rule = model.createAssignmentRule()
+    rule.setVariable(combined_var)
+    rule.setFormula("+".join(compound_vars))
     
 def add_to_cons(model, free_var, new_var):
     rule = model.getAssignmentRuleByVariable(free_var)
