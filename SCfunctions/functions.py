@@ -116,42 +116,57 @@ def add_reaction(model, reactants, products, modifiers, pars, formula, rx_id, re
     reaction.setId(rx_id)
     kinetic_law = reaction.createKineticLaw()
     kinetic_law.setFormula(formula)
-    
-    
+
 def add_binding_reaction(model, reactants, products, kon, koff, rx_id, replace = False):
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     parameter_ids = [model.getParameter(i).getId() for i in range(model.getNumParameters())]
     rx_ids = [model.getReaction(i).getId() for i in range(model.getNumReactions())]
-    if rx_id in rx_ids:
-        if replace:
-            reaction_old = model.getReaction(rx_id)
-            reaction_old.removeFromParentAndDelete()
-        else:
-            raise ValueError("reaction '"+rx_id+"' already exists in model.")
-    reaction = model.createReaction()
-    reaction.setFast(False)
-    reaction.setReversible(True)
+    rx_id_f = rx_id+"_f"
+    rx_id_r = rx_id+"_r"
     for par in [kon, koff]:
         if par not in parameter_ids:
             add_parameter(model, par)
     for reactant in reactants:
         if reactant not in species_ids:
             add_species(model, reactant)
-        species = reaction.createReactant()
-        species.setSpecies(reactant)
-        species.setConstant(True)
-        species.setStoichiometry(1)
     for product in products:
         if product not in species_ids:
             add_species(model, product)        
-        species = reaction.createProduct()
-        species.setSpecies(product)
-        species.setConstant(True)
-        species.setStoichiometry(1)
-    reaction.setId(rx_id)
-    formula = " * ".join([kon]+reactants)+" - "+" * ".join([koff]+products)
-    kinetic_law = reaction.createKineticLaw()
-    kinetic_law.setFormula(formula)
+    for rx_id_x in [rx_id_f, rx_id_r]:
+        if rx_id_x in rx_ids:
+            if replace:
+                reaction_old = model.getReaction(rx_id_x)
+                reaction_old.removeFromParentAndDelete()
+            else:
+                raise ValueError("reaction '"+rx_id_x+"' already exists in model.")
+    reaction_f = model.createReaction()
+    reaction_f.setReversible(False)
+    reaction_f.setFast(False)
+    reaction_r = model.createReaction()
+    reaction_r.setReversible(False)
+    reaction_r.setFast(False)
+    for reactant in reactants:
+        species_f = reaction_f.createReactant()
+        species_r = reaction_r.createProduct()
+        for species in [species_f, species_r]:
+            species.setSpecies(reactant)
+            species.setConstant(True)
+            species.setStoichiometry(1)
+    for product in products:
+        species_f = reaction_f.createProduct()
+        species_r = reaction_r.createReactant()
+        for species in [species_f, species_r]:
+            species.setSpecies(product)
+            species.setConstant(True)
+            species.setStoichiometry(1)
+    reaction_f.setId(rx_id_f)
+    formula_f = " * ".join([kon]+reactants)
+    kinetic_law_f = reaction_f.createKineticLaw()
+    kinetic_law_f.setFormula(formula_f)
+    reaction_r.setId(rx_id_r)
+    formula_r = " * ".join([koff]+products)
+    kinetic_law_r = reaction_r.createKineticLaw()
+    kinetic_law_r.setFormula(formula_r)
 
 
 def add_catalytic_reaction(model, reactants, products, catalyst, kcat, rx_id, replace = False):
@@ -166,7 +181,7 @@ def add_catalytic_reaction(model, reactants, products, catalyst, kcat, rx_id, re
             raise ValueError("reaction '"+rx_id+"' already exists in model.")
     reaction = model.createReaction()
     reaction.setFast(False)
-    reaction.setReversible(True)
+    reaction.setReversible(False)
     if kcat not in parameter_ids:
         add_parameter(model, kcat)
     for reactant in reactants:
