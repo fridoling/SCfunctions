@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import re
 from libsbml import *
 from SloppyCell.ReactionNetworks import *
 import warnings
@@ -272,6 +273,28 @@ def add_to_tot(model, tot_var, new_var):
     formula = rule.getFormula()    
     new_formula = formula+' + '+new_var
     rule.setFormula(new_formula)
+
+def replace_assignments(model, var = None):
+    species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
+    reactions = [model.getReaction(i) for i in range(model.getNumReactions())]
+    if var is None:
+        ass_species_ids = [species_id for species_id in species_ids if model.getAssignmentRule(species_id) is not None]
+    else:
+        ass_species_ids = [var]
+    for ass_species_id in ass_species_ids:
+        assignment_formula = model.getAssignmentRule(ass_species_id).formula
+        for reaction in reactions:
+            modifiers = [modifier.getSpecies() for modifier in reaction.getListOfModifiers()]
+            if ass_species_id in modifiers:
+                kinetic_law = reaction.getKineticLaw()
+                formula = kinetic_law.getFormula()
+                formula_sub = re.sub("(^|[-(*+]|\s)"+ass_species_id+"($|[-)*+]|\s)", r"\1("+assignment_formula+r")\2", formula)
+                kinetic_law.setFormula(formula_sub)
+                reaction.modifiers.remove(ass_species_id)
+                for species_id in species_ids:
+                    if re.search(r"(^|[-(*+]|\s)"+species_id+"($|[-)*+]|\s)", assignment_formula) is not None:
+                        species = reaction.createModifier()
+                        species.setSpecies(species_id)
 
 
 ### Functions for Plotting
