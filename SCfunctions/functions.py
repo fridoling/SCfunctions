@@ -275,6 +275,9 @@ def add_to_tot(model, tot_var, new_var):
     rule.setFormula(new_formula)
 
 def replace_assignments(model, var = None):
+    """
+    If there are variables with assignments in model, replace with assignment formula.
+    """
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
     reactions = [model.getReaction(i) for i in range(model.getNumReactions())]
     if var is None:
@@ -544,7 +547,7 @@ def getCDF(res, thresh, offset=0, plot=True, **kwargs):
 
 
 
-def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_fit = True, exp_ids=None, local_it=20, global_it=10000, return_ens=True):
+def fit_exps(exps, nets, params_fixed, params_constrained, params_free, cfac = 1.1, ffac = 1000, global_fit = True, exp_ids=None, local_it=20, global_it=10000, return_ens=True):
     """ 
     Fit a set of experiments in a SloppyCell model.
 
@@ -564,6 +567,10 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
         A keyed list of constrained parameters
     params_free : KeyedList
         A keyed list of free parameters
+    cfac : float
+        Factor that determines how much the constrained parameters vary (default 1.1).
+    ffac : float
+        Factor that determines how much the free parameters vary (default 1000).
     global_fit : bool, optional
         When true, perform ensemble analysis.
     exp_ids : list, optional
@@ -607,11 +614,11 @@ def fit_exps(exps, nets, params_fixed, params_constrained, params_free, global_f
     m = Model(exp_set, net_set)
 
     for key, val in params_free.items():
-        res = Residuals.PriorInLog(key+'_prior', key, np.log(val), np.log(np.sqrt(10)))
+        res = Residuals.PriorInLog(key+'_prior', key, np.log(val), np.log(np.sqrt(ffac)))
         m.AddResidual(res)
 
     for key, val in params_constrained.items():
-        res = Residuals.PriorInLog(key+'_prior', key, np.log(val), np.log(np.sqrt(1.1)))
+        res = Residuals.PriorInLog(key+'_prior', key, np.log(val), np.log(np.sqrt(cfac)))
         m.AddResidual(res)
 
     print "Performing local optimization ..."
