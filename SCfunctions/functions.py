@@ -116,7 +116,7 @@ def add_reaction(model, reactants, products, modifiers, pars, formula, rx_id, re
         species.setSpecies(modifier)
     reaction.setId(rx_id)
     kinetic_law = reaction.createKineticLaw()
-    kinetic_law.setFormula(formula)
+    kinetic_law.setFormula(str(formula))
 
 def add_binding_reaction(model, reactants, products, kon, koff, rx_id, replace = False):
     species_ids = [model.getSpecies(i).getId() for i in range(model.getNumSpecies())]
